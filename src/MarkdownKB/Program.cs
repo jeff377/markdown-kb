@@ -1,7 +1,22 @@
+using MarkdownKB.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 100;
+});
+
+builder.Services.AddHttpClient<GitHubService>();
+builder.Services.AddScoped<MarkdownService>();
+builder.Services.AddScoped<TokenService>();
+
+builder.Services.AddDataProtection();
+
+builder.Services.AddSession();
 
 var app = builder.Build();
 
@@ -9,7 +24,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -17,6 +31,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 
