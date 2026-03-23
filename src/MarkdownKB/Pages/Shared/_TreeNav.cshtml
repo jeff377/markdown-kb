@@ -1,1 +1,89 @@
-@* _TreeNav partial view *@
+@using MarkdownKB.Models
+@using Microsoft.AspNetCore.Html
+@using System.Text
+@using System.Text.Encodings.Web
+
+@{
+    var tree        = ViewData["Tree"] as List<GitHubTreeNode> ?? [];
+    var owner       = ViewData["Owner"] as string ?? string.Empty;
+    var repo        = ViewData["Repo"]  as string ?? string.Empty;
+    var currentPath = Context.Request.Query["path"].ToString();
+}
+
+<style>
+    .nav-tree { padding-left: 0; }
+    .nav-tree ul { padding-left: 1rem; }
+    .nav-tree li { list-style: none; }
+    .nav-tree details > summary {
+        cursor: pointer;
+        padding: .2rem .4rem;
+        border-radius: 4px;
+        font-size: .85rem;
+        color: #24292f;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .nav-tree details > summary:hover { background: #e8ecef; }
+    .nav-tree a.nav-link {
+        display: block;
+        padding: .2rem .4rem;
+        border-radius: 4px;
+        font-size: .85rem;
+        color: #0969da;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .nav-tree a.nav-link:hover { background: #e8ecef; }
+    .nav-tree a.nav-link.active {
+        background: #0969da;
+        color: #fff;
+        font-weight: 600;
+    }
+</style>
+
+@RenderNodes(tree, owner, repo, currentPath)
+
+@functions {
+    IHtmlContent RenderNodes(List<GitHubTreeNode> nodes, string owner, string repo, string currentPath)
+    {
+        var sb = new StringBuilder();
+        sb.Append("<ul class=\"nav-tree list-unstyled mb-0\">");
+
+        var folders = nodes.Where(n => n.Type == "tree").OrderBy(n => n.Name);
+        var files   = nodes.Where(n => n.Type == "blob").OrderBy(n => n.Name);
+
+        foreach (var node in folders.Concat(files))
+        {
+            if (node.Type == "tree")
+            {
+                var open = IsAncestorOfActive(node, currentPath) ? " open" : "";
+                sb.Append($"<li><details{open}>");
+                sb.Append($"<summary>📁 {HtmlEncoder.Default.Encode(node.Name)}</summary>");
+                sb.Append(RenderNodes(node.Children, owner, repo, currentPath).ToString());
+                sb.Append("</details></li>");
+            }
+            else
+            {
+                var active = node.Path == currentPath ? " active" : "";
+                var url    = $"/Viewer?owner={Uri.EscapeDataString(owner)}&repo={Uri.EscapeDataString(repo)}&path={Uri.EscapeDataString(node.Path)}";
+                sb.Append($"<li><a href=\"{url}\" class=\"nav-link{active}\">📄 {HtmlEncoder.Default.Encode(node.Name)}</a></li>");
+            }
+        }
+
+        sb.Append("</ul>");
+        return new HtmlString(sb.ToString());
+    }
+
+    bool IsAncestorOfActive(GitHubTreeNode folder, string currentPath)
+    {
+        if (string.IsNullOrEmpty(currentPath)) return false;
+        foreach (var child in folder.Children)
+        {
+            if (child.Path == currentPath) return true;
+            if (child.Type == "tree" && IsAncestorOfActive(child, currentPath)) return true;
+        }
+        return false;
+    }
+}
