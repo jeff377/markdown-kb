@@ -31,11 +31,7 @@
         .site-header .repo-name { font-weight: 600; font-size: 1rem; color: #fff; }
 
         /* ── main row ── */
-        .main-row {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+        .main-row { display: flex; flex: 1; overflow: hidden; }
 
         /* ── sidebar ── */
         .sidebar {
@@ -48,22 +44,36 @@
         }
 
         /* ── content ── */
-        .content-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem 2rem;
+        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem 2rem; }
+
+        /* ── loading overlay ── */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, .75);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
+        #loading-overlay.active { display: flex; }
     </style>
 </head>
 <body>
+    <!-- Loading spinner overlay (shown during page navigation) -->
+    <div id="loading-overlay" role="status" aria-label="載入中">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width:2.5rem;height:2.5rem;"></div>
+            <div class="mt-2 small text-muted">載入中…</div>
+        </div>
+    </div>
+
     <!-- header -->
     <header class="site-header">
         <a href="/">← 返回首頁</a>
         @if (ViewData["Repo"] is string repoName && !string.IsNullOrEmpty(repoName))
         {
-            <span class="repo-name">
-                @(ViewData["Owner"])/@repoName
-            </span>
+            <span class="repo-name">@(ViewData["Owner"])/@repoName</span>
         }
     </header>
 
@@ -85,7 +95,27 @@
             crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
             crossorigin="anonymous"></script>
-    <script>hljs.highlightAll();</script>
+    <script>
+        hljs.highlightAll();
+
+        // Show loading overlay on navigation
+        (function () {
+            var overlay = document.getElementById('loading-overlay');
+            function show() { overlay.classList.add('active'); }
+
+            window.addEventListener('beforeunload', show);
+
+            document.addEventListener('click', function (e) {
+                var a = e.target.closest('a[href]');
+                if (!a) return;
+                var href = a.getAttribute('href') || '';
+                if (href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank') return;
+                show();
+            });
+
+            document.addEventListener('submit', show);
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
