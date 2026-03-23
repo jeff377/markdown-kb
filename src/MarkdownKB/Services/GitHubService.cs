@@ -113,6 +113,31 @@ public class GitHubService(HttpClient httpClient, IMemoryCache cache)
         return content;
     }
 
+    public async Task<string?> GetLastCommitDateAsync(string owner, string repo, string path, string? token)
+    {
+        ConfigureRequest(token);
+
+        var response = await httpClient.GetAsync(
+            $"https://api.github.com/repos/{owner}/{repo}/commits?path={Uri.EscapeDataString(path)}&per_page=1");
+
+        if (!response.IsSuccessStatusCode) return null;
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var commits = doc.RootElement;
+
+        if (commits.GetArrayLength() == 0) return null;
+
+        var date = commits[0]
+            .GetProperty("commit")
+            .GetProperty("committer")
+            .GetProperty("date")
+            .GetString();
+
+        return DateTime.TryParse(date, out var dt)
+            ? dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            : date;
+    }
+
     private static List<GitHubTreeNode> BuildTree(List<GitHubTreeNode> flat)
     {
         var nodeMap = flat.ToDictionary(n => n.Path);

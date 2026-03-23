@@ -1,2 +1,46 @@
 @page
 @model MarkdownKB.Pages.ViewerModel
+@{
+    ViewData["Title"] = string.IsNullOrEmpty(Model.Path)
+        ? Model.Repo
+        : System.IO.Path.GetFileNameWithoutExtension(Model.Path);
+    ViewData["Owner"] = Model.Owner;
+    ViewData["Repo"]  = Model.Repo;
+    ViewData["Tree"]  = Model.Tree;
+}
+
+<style>
+    .content img { max-width: 100%; height: auto; }
+    .content pre { background: #f6f8fa; border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .content table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+    .content table th,
+    .content table td { border: 1px solid #d0d7de; padding: .4rem .75rem; }
+    .content table th { background: #f6f8fa; }
+    .content blockquote {
+        border-left: 4px solid #d0d7de;
+        padding: .25rem 1rem;
+        color: #57606a;
+        margin: 0 0 1rem;
+    }
+</style>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>發生錯誤：</strong> @Model.ErrorMessage
+        <div class="mt-2 small text-muted">
+            請確認 Repository 名稱是否正確，或提供有效的 GitHub Token 以存取 Private Repo。
+        </div>
+    </div>
+}
+else
+{
+    if (!string.IsNullOrEmpty(Model.LastUpdated))
+    {
+        <p class="text-muted small mb-3">最後更新：@Model.LastUpdated</p>
+    }
+
+    <div class="content">
+        @Html.Raw(Model.RenderedHtml)
+    </div>
+}
