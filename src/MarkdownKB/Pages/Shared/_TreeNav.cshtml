@@ -7,7 +7,9 @@
     var tree        = ViewData["Tree"] as List<GitHubTreeNode> ?? [];
     var owner       = ViewData["Owner"] as string ?? string.Empty;
     var repo        = ViewData["Repo"]  as string ?? string.Empty;
-    var currentPath = Context.Request.Query["path"].ToString();
+    var usePaths    = ViewData["UsePaths"] is true;
+    var currentPath = ViewData["CurrentPath"] as string
+                      ?? Context.Request.Query["path"].ToString();
 }
 
 <style>
@@ -43,10 +45,10 @@
     }
 </style>
 
-@RenderNodes(tree, owner, repo, currentPath)
+@RenderNodes(tree, owner, repo, currentPath, usePaths)
 
 @functions {
-    IHtmlContent RenderNodes(List<GitHubTreeNode> nodes, string owner, string repo, string currentPath)
+    IHtmlContent RenderNodes(List<GitHubTreeNode> nodes, string owner, string repo, string currentPath, bool usePaths)
     {
         var sb = new StringBuilder();
         sb.Append("<ul class=\"nav-tree list-unstyled mb-0\">");
@@ -61,13 +63,22 @@
                 var open = currentPath.StartsWith(node.Path + "/") ? " open" : "";
                 sb.Append($"<li><details{open}>");
                 sb.Append($"<summary>📁 {HtmlEncoder.Default.Encode(node.Name)}</summary>");
-                sb.Append(RenderNodes(node.Children, owner, repo, currentPath).ToString());
+                sb.Append(RenderNodes(node.Children, owner, repo, currentPath, usePaths).ToString());
                 sb.Append("</details></li>");
             }
             else
             {
                 var active = node.Path == currentPath ? " active" : "";
-                var url    = $"/Viewer?owner={Uri.EscapeDataString(owner)}&repo={Uri.EscapeDataString(repo)}&path={Uri.EscapeDataString(node.Path)}";
+                string url;
+                if (usePaths)
+                {
+                    var segments = node.Path.Split('/').Select(s => Uri.EscapeDataString(s));
+                    url = $"/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/{string.Join("/", segments)}";
+                }
+                else
+                {
+                    url = $"/Viewer?owner={Uri.EscapeDataString(owner)}&repo={Uri.EscapeDataString(repo)}&path={Uri.EscapeDataString(node.Path)}";
+                }
                 sb.Append($"<li><a href=\"{url}\" class=\"nav-link{active}\">📄 {HtmlEncoder.Default.Encode(node.Name)}</a></li>");
             }
         }
@@ -75,6 +86,4 @@
         sb.Append("</ul>");
         return new HtmlString(sb.ToString());
     }
-
-
 }

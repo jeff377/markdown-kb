@@ -10,7 +10,7 @@ public class MarkdownService
         .UseYamlFrontMatter()
         .Build();
 
-    public string Render(string markdown, string owner, string repo, string currentPath)
+    public string Render(string markdown, string owner, string repo, string currentPath, bool usePaths = false)
     {
         var html = Markdown.ToHtml(markdown, Pipeline);
 
@@ -25,7 +25,17 @@ public class MarkdownService
             if (!href.EndsWith(".md", StringComparison.OrdinalIgnoreCase)) continue;
 
             var resolved = ResolvePath(currentPath, href);
-            node.SetAttributeValue("href", $"/Viewer?owner={owner}&repo={repo}&path={resolved}");
+            string linkUrl;
+            if (usePaths)
+            {
+                var encodedPath = string.Join("/", resolved.Split('/').Select(Uri.EscapeDataString));
+                linkUrl = $"/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/{encodedPath}";
+            }
+            else
+            {
+                linkUrl = $"/Viewer?owner={owner}&repo={repo}&path={resolved}";
+            }
+            node.SetAttributeValue("href", linkUrl);
         }
 
         // <img src> 轉換

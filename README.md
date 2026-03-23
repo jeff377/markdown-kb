@@ -16,7 +16,23 @@ docker compose up -d
 http://localhost:8080
 ```
 
-### 3. 輸入 Repository 資訊
+### 3. 瀏覽 Repository
+
+**方法一：直接輸入網址**
+
+在網址列直接加上 `{owner}/{repo}` 即可開啟：
+
+```
+http://localhost:8080/microsoft/vscode-docs
+```
+
+也支援直接連結到特定文件：
+
+```
+http://localhost:8080/microsoft/vscode-docs/docs/editor/settings.md
+```
+
+**方法二：首頁表單**
 
 在首頁表單填入：
 

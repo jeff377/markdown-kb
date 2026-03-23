@@ -29,6 +29,6 @@ public class IndexModel(TokenService tokenService) : PageModel
         if (!string.IsNullOrWhiteSpace(Token) && Token != "********")
             tokenService.SaveToken(Response, Token);
 
-        return RedirectToPage("/Viewer", new { owner = Owner, repo = Repo });
+        return Redirect($"/{Uri.EscapeDataString(Owner)}/{Uri.EscapeDataString(Repo)}");
     }
 }
