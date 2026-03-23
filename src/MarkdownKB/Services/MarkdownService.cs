@@ -18,7 +18,7 @@ public class MarkdownService
         doc.LoadHtml(html);
 
         // <a href> 轉換
-        foreach (var node in doc.DocumentNode.SelectNodes("//a[@href]") ?? [])
+        foreach (var node in doc.DocumentNode.SelectNodes("//a[@href]") ?? Enumerable.Empty<HtmlNode>())
         {
             var href = node.GetAttributeValue("href", "");
             if (string.IsNullOrEmpty(href) || IsAbsolute(href)) continue;
@@ -29,7 +29,7 @@ public class MarkdownService
         }
 
         // <img src> 轉換
-        foreach (var node in doc.DocumentNode.SelectNodes("//img[@src]") ?? [])
+        foreach (var node in doc.DocumentNode.SelectNodes("//img[@src]") ?? Enumerable.Empty<HtmlNode>())
         {
             var src = node.GetAttributeValue("src", "");
             if (string.IsNullOrEmpty(src) || IsAbsolute(src)) continue;
