@@ -58,7 +58,7 @@
         {
             if (node.Type == "tree")
             {
-                var open = IsAncestorOfActive(node, currentPath) ? " open" : "";
+                var open = currentPath.StartsWith(node.Path + "/") ? " open" : "";
                 sb.Append($"<li><details{open}>");
                 sb.Append($"<summary>📁 {HtmlEncoder.Default.Encode(node.Name)}</summary>");
                 sb.Append(RenderNodes(node.Children, owner, repo, currentPath).ToString());
@@ -76,14 +76,5 @@
         return new HtmlString(sb.ToString());
     }
 
-    bool IsAncestorOfActive(GitHubTreeNode folder, string currentPath)
-    {
-        if (string.IsNullOrEmpty(currentPath)) return false;
-        foreach (var child in folder.Children)
-        {
-            if (child.Path == currentPath) return true;
-            if (child.Type == "tree" && IsAncestorOfActive(child, currentPath)) return true;
-        }
-        return false;
-    }
+
 }

@@ -102,6 +102,7 @@ public class GitHubService(HttpClient httpClient, IMemoryCache cache, ILogger<Gi
         }
 
         var tree = BuildTree(flat);
+        tree = FilterEmptyFolders(tree);
 
         cache.Set(cacheKey, tree, new MemoryCacheEntryOptions
         {
@@ -110,6 +111,25 @@ public class GitHubService(HttpClient httpClient, IMemoryCache cache, ILogger<Gi
         });
 
         return tree;
+    }
+
+    private List<GitHubTreeNode> FilterEmptyFolders(List<GitHubTreeNode> nodes)
+    {
+        var result = new List<GitHubTreeNode>();
+        foreach (var node in nodes)
+        {
+            if (node.Type == "blob")
+            {
+                result.Add(node);
+            }
+            else if (node.Type == "tree")
+            {
+                node.Children = FilterEmptyFolders(node.Children);
+                if (node.Children.Count > 0)
+                    result.Add(node);
+            }
+        }
+        return result;
     }
 
     public async Task<string?> GetRawFileContentAsync(string owner, string repo, string path, string? token)
