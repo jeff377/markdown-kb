@@ -7,23 +7,30 @@
     ViewData["Owner"] = Model.Owner;
     ViewData["Repo"]  = Model.Repo;
     ViewData["Tree"]  = Model.Tree;
+
+    var refreshUrl = $"/Viewer?owner={Uri.EscapeDataString(Model.Owner)}&repo={Uri.EscapeDataString(Model.Repo)}&path={Uri.EscapeDataString(Model.Path)}&handler=Refresh";
 }
 
 <style>
-    .content img { max-width: 100%; height: auto; }
-    .content pre { background: #f6f8fa; border-radius: 6px; padding: 1rem; overflow-x: auto; }
-    .content table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+    .content img         { max-width: 100%; height: auto; }
+    .content pre         { background: #f6f8fa; border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .content table       { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
     .content table th,
-    .content table td { border: 1px solid #d0d7de; padding: .4rem .75rem; }
-    .content table th { background: #f6f8fa; }
-    .content blockquote {
-        border-left: 4px solid #d0d7de;
-        padding: .25rem 1rem;
-        color: #57606a;
-        margin: 0 0 1rem;
-    }
+    .content table td    { border: 1px solid #d0d7de; padding: .4rem .75rem; }
+    .content table th    { background: #f6f8fa; }
+    .content blockquote  { border-left: 4px solid #d0d7de; padding: .25rem 1rem; color: #57606a; margin: 0 0 1rem; }
+
+    .breadcrumb-item + .breadcrumb-item::before { content: "/"; }
 </style>
 
+@* ── toolbar (refresh button, always visible) ── *@
+<div class="d-flex justify-content-end mb-3">
+    <a href="@refreshUrl" class="btn btn-sm btn-outline-secondary" title="清除快取並重新載入">
+        ↺ 重新整理
+    </a>
+</div>
+
+@* ── error state ── *@
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
     <div class="alert alert-danger" role="alert">
@@ -32,10 +39,60 @@
             請確認 Repository 名稱是否正確，或提供有效的 GitHub Token 以存取 Private Repo。
         </div>
     </div>
+
+    @if (Model.Tree.Count == 0)
+    {
+        @* Tree load failed – show prominent retry *@
+        <div class="text-center mt-4">
+            <p class="text-muted">無法載入 Repository 結構。</p>
+            <a href="@refreshUrl" class="btn btn-primary">重試</a>
+            <a href="/" class="btn btn-outline-secondary ms-2">返回首頁</a>
+        </div>
+    }
 }
+@* ── empty repo state ── *@
+else if (!Model.HasMarkdownFiles && Model.Tree.Count > 0)
+{
+    <div class="text-center py-5 text-muted">
+        <div class="fs-1 mb-3">📂</div>
+        <h5>此 Repository 尚無 Markdown 文件</h5>
+        <p class="small">目前找不到任何 .md 檔案。</p>
+        <a href="/" class="btn btn-outline-secondary btn-sm mt-2">返回首頁</a>
+    </div>
+}
+@* ── no path selected ── *@
+else if (string.IsNullOrEmpty(Model.Path))
+{
+    <div class="text-center py-5 text-muted">
+        <div class="fs-1 mb-3">👈</div>
+        <p class="fst-italic">請從左側選擇文件</p>
+    </div>
+}
+@* ── normal content ── *@
 else
 {
-    if (!string.IsNullOrEmpty(Model.LastUpdated))
+    @* breadcrumb *@
+    @if (Model.Breadcrumbs.Count > 0)
+    {
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="breadcrumb mb-1">
+                @foreach (var crumb in Model.Breadcrumbs)
+                {
+                    if (crumb.Url is not null)
+                    {
+                        <li class="breadcrumb-item"><a href="@crumb.Url">@crumb.Label</a></li>
+                    }
+                    else
+                    {
+                        <li class="breadcrumb-item active" aria-current="page">@crumb.Label</li>
+                    }
+                }
+            </ol>
+        </nav>
+    }
+
+    @* last updated *@
+    @if (!string.IsNullOrEmpty(Model.LastUpdated))
     {
         <p class="text-muted small mb-3">最後更新：@Model.LastUpdated</p>
     }
