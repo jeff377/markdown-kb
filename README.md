@@ -1,6 +1,6 @@
 # MarkdownKB
 
-以 GitHub Repository 為來源的 Markdown 知識庫瀏覽器，使用 ASP.NET Core (.NET 8) 建構。
+以 GitHub Repository 為來源的 Markdown 知識庫瀏覽器，使用 ASP.NET Core (.NET 10) 建構。
 
 ## 快速啟動（Docker）
 
@@ -63,4 +63,4 @@ cd src/MarkdownKB
 dotnet run
 ```
 
-預設監聽 `https://localhost:5001`。
+預設監聽 `http://localhost:5275`（或 HTTPS `https://localhost:7195`）。
