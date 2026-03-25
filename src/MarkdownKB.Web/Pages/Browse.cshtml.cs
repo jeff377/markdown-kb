@@ -1,5 +1,5 @@
-using MarkdownKB.Models;
-using MarkdownKB.Services;
+using MarkdownKB.Core.Models;
+using MarkdownKB.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
