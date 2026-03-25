@@ -2,11 +2,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-COPY src/MarkdownKB/MarkdownKB.csproj src/MarkdownKB/
-RUN dotnet restore src/MarkdownKB/MarkdownKB.csproj
+COPY src/MarkdownKB.Core/MarkdownKB.Core.csproj src/MarkdownKB.Core/
+COPY src/MarkdownKB.Web/MarkdownKB.Web.csproj src/MarkdownKB.Web/
+RUN dotnet restore src/MarkdownKB.Web/MarkdownKB.Web.csproj
 
 COPY . .
-RUN dotnet publish src/MarkdownKB/MarkdownKB.csproj \
+RUN dotnet publish src/MarkdownKB.Web/MarkdownKB.Web.csproj \
         -c Release \
         -o /app/publish \
         --no-restore
@@ -18,4 +19,4 @@ EXPOSE 8080
 
 COPY --from=build /app/publish .
 
-ENTRYPOINT ["dotnet", "MarkdownKB.dll"]
+ENTRYPOINT ["dotnet", "MarkdownKB.Web.dll"]
