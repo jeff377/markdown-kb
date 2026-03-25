@@ -1,11 +1,13 @@
-using MarkdownKB.Models;
-using MarkdownKB.Services;
+using MarkdownKB.Core.Models;
+using MarkdownKB.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace MarkdownKB.Pages;
 
-public class BrowseModel(
+public record BreadcrumbItem(string Label, string? Url);
+
+public class ViewerModel(
     GitHubService gitHubService,
     MarkdownService markdownService,
     TokenService tokenService) : PageModel
@@ -21,11 +23,11 @@ public class BrowseModel(
     public bool HasMarkdownFiles { get; private set; }
     public List<BreadcrumbItem> Breadcrumbs { get; private set; } = [];
 
-    public async Task OnGetAsync(string owner, string repo, string? path = null)
+    public async Task OnGetAsync()
     {
-        Owner = owner;
-        Repo  = repo;
-        Path  = path?.TrimStart('/') ?? string.Empty;
+        Owner = Request.Query["owner"].ToString();
+        Repo  = Request.Query["repo"].ToString();
+        Path  = Request.Query["path"].ToString();
 
         try
         {
@@ -41,7 +43,7 @@ public class BrowseModel(
                 var content = await gitHubService.GetRawFileContentAsync(Owner, Repo, Path, token)
                     ?? throw new FileNotFoundException($"找不到檔案：{Path}");
 
-                RenderedHtml = markdownService.Render(content, Owner, Repo, Path, usePaths: true);
+                RenderedHtml = markdownService.Render(content, Owner, Repo, Path);
                 LastUpdated  = await gitHubService.GetLastCommitDateAsync(Owner, Repo, Path, token);
             }
         }
@@ -50,30 +52,26 @@ public class BrowseModel(
         catch (InvalidOperationException   ex) { ErrorMessage = ex.Message; }
     }
 
-    public IActionResult OnGetRefresh(string owner, string repo, string? path)
+    // Clears the repo cache and redirects back to the current view
+    public IActionResult OnGetRefresh()
     {
+        var owner = Request.Query["owner"].ToString();
+        var repo  = Request.Query["repo"].ToString();
+        var path  = Request.Query["path"].ToString();
+
         gitHubService.ClearRepoCache(owner, repo);
-        return Redirect(BuildFileUrl(owner, repo, path?.TrimStart('/') ?? string.Empty));
+
+        return Redirect(
+            $"/Viewer?owner={Uri.EscapeDataString(owner)}&repo={Uri.EscapeDataString(repo)}&path={Uri.EscapeDataString(path)}");
     }
 
     // ── helpers ────────────────────────────────────────────────────────────
-
-    public static string BuildFileUrl(string owner, string repo, string filePath)
-    {
-        var encodedOwner = Uri.EscapeDataString(owner);
-        var encodedRepo  = Uri.EscapeDataString(repo);
-        if (string.IsNullOrEmpty(filePath))
-            return $"/{encodedOwner}/{encodedRepo}";
-
-        var encodedPath = string.Join("/", filePath.Split('/').Select(Uri.EscapeDataString));
-        return $"/{encodedOwner}/{encodedRepo}/{encodedPath}";
-    }
 
     private void BuildBreadcrumbs()
     {
         var crumbs = new List<BreadcrumbItem>
         {
-            new("首頁", BuildFileUrl(Owner, Repo, string.Empty))
+            new("首頁", $"/Viewer?owner={Uri.EscapeDataString(Owner)}&repo={Uri.EscapeDataString(Repo)}")
         };
 
         var parts = Path.Split('/');
@@ -89,7 +87,9 @@ public class BrowseModel(
             else
             {
                 var firstMd = FindFirstMdInFolder(Tree, segmentPath);
-                var url = firstMd is not null ? BuildFileUrl(Owner, Repo, firstMd) : null;
+                var url = firstMd is not null
+                    ? $"/Viewer?owner={Uri.EscapeDataString(Owner)}&repo={Uri.EscapeDataString(Repo)}&path={Uri.EscapeDataString(firstMd)}"
+                    : null;
                 crumbs.Add(new(parts[i], url));
             }
         }

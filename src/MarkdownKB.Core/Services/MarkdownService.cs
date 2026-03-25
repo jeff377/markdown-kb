@@ -1,7 +1,7 @@
 using HtmlAgilityPack;
 using Markdig;
 
-namespace MarkdownKB.Services;
+namespace MarkdownKB.Core.Services;
 
 public class MarkdownService
 {

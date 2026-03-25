@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 
-namespace MarkdownKB.Services;
+namespace MarkdownKB.Core.Services;
 
 public class TokenService
 {

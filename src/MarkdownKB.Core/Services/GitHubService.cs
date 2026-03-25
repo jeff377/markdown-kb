@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using MarkdownKB.Models;
+using MarkdownKB.Core.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
-namespace MarkdownKB.Services;
+namespace MarkdownKB.Core.Services;
 
 public class GitHubService(HttpClient httpClient, IMemoryCache cache, ILogger<GitHubService> logger)
 {

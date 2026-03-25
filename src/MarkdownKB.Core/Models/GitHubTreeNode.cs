@@ -1,4 +1,4 @@
-namespace MarkdownKB.Models;
+namespace MarkdownKB.Core.Models;
 
 public class GitHubTreeNode
 {

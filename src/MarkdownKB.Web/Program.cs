@@ -1,4 +1,4 @@
-using MarkdownKB.Services;
+using MarkdownKB.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
