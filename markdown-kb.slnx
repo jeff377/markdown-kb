@@ -2,6 +2,9 @@
   <Folder Name="/src/">
     <Project Path="src/MarkdownKB.Search/MarkdownKB.Search.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MarkdownKB.Search.Tests/MarkdownKB.Search.Tests.csproj" />
+  </Folder>
   <Project Path="src\MarkdownKB.Core\MarkdownKB.Core.csproj" />
   <Project Path="src\MarkdownKB.Web\MarkdownKB.Web.csproj" />
 </Solution>

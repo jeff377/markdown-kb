@@ -76,6 +76,7 @@ public class MarkdownChunker
 
     // -------------------------------------------------------------------------
     // Heading splitter — tracks H1 > H2 hierarchy for heading paths
+    // Must track code block state to avoid treating bash comments (# ...) as headings
     // -------------------------------------------------------------------------
     private static List<(string headingPath, string content)> SplitByHeadings(string markdown)
     {
@@ -84,6 +85,7 @@ public class MarkdownChunker
         string h1 = "";
         string currentPath = "";
         var currentLines = new List<string>();
+        bool inCodeBlock = false;
 
         void Flush()
         {
@@ -96,24 +98,37 @@ public class MarkdownChunker
         {
             var trimmed = line.TrimStart();
 
-            if (trimmed.StartsWith("# ") && !trimmed.StartsWith("## "))
+            // Toggle code block state on fence markers
+            if (trimmed.StartsWith("```"))
             {
-                Flush();
-                h1 = trimmed[2..].Trim();
-                currentPath = h1;
+                inCodeBlock = !inCodeBlock;
                 currentLines.Add(line);
+                continue;
             }
-            else if (trimmed.StartsWith("## "))
+
+            // Only detect headings outside code blocks
+            if (!inCodeBlock)
             {
-                Flush();
-                var h2 = trimmed[3..].Trim();
-                currentPath = string.IsNullOrEmpty(h1) ? h2 : $"{h1} > {h2}";
-                currentLines.Add(line);
+                if (trimmed.StartsWith("# ") && !trimmed.StartsWith("## "))
+                {
+                    Flush();
+                    h1 = trimmed[2..].Trim();
+                    currentPath = h1;
+                    currentLines.Add(line);
+                    continue;
+                }
+
+                if (trimmed.StartsWith("## "))
+                {
+                    Flush();
+                    var h2 = trimmed[3..].Trim();
+                    currentPath = string.IsNullOrEmpty(h1) ? h2 : $"{h1} > {h2}";
+                    currentLines.Add(line);
+                    continue;
+                }
             }
-            else
-            {
-                currentLines.Add(line);
-            }
+
+            currentLines.Add(line);
         }
 
         Flush();
