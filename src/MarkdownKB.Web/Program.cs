@@ -1,4 +1,7 @@
 using MarkdownKB.Core.Services;
+using MarkdownKB.Search;
+using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +16,11 @@ builder.Services.AddMemoryCache(options =>
 builder.Services.AddHttpClient<GitHubService>();
 builder.Services.AddScoped<MarkdownService>();
 builder.Services.AddScoped<TokenService>();
+
+builder.Services.AddDbContext<SearchDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        o => o.UseVector()));
 
 builder.Services.AddDataProtection();
 
