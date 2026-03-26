@@ -13,8 +13,27 @@ public class ChunkingOptions
 
 public class MarkdownChunker
 {
-    // ~4 characters per token (rough approximation for English; conservative for Chinese)
-    private static int EstimateTokens(string text) => Math.Max(1, text.Length / 4);
+    /// <summary>
+    /// Estimates token count using character-type weighting:
+    /// - CJK characters (Chinese/Japanese/Korean): ~1.5 tokens each
+    /// - ASCII characters: ~0.25 tokens each (4 chars per token)
+    /// This matches the behaviour of OpenAI tiktoken for mixed CJK/ASCII text.
+    /// </summary>
+    private static int EstimateTokens(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return 0;
+        double tokens = 0;
+        foreach (var ch in text)
+            tokens += IsCjk(ch) ? 1.5 : 0.25;
+        return Math.Max(1, (int)tokens);
+    }
+
+    private static bool IsCjk(char c) =>
+        (c >= '\u4E00' && c <= '\u9FFF') ||   // CJK Unified Ideographs
+        (c >= '\u3400' && c <= '\u4DBF') ||   // CJK Extension A
+        (c >= '\uF900' && c <= '\uFAFF') ||   // CJK Compatibility Ideographs
+        (c >= '\u3000' && c <= '\u303F') ||   // CJK Symbols and Punctuation
+        (c >= '\uFF00' && c <= '\uFFEF');      // Fullwidth / Halfwidth Forms
 
     public IEnumerable<DocumentChunk> Chunk(
         string markdown,
