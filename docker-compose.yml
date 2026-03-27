@@ -7,6 +7,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=db;Database=knowledge_db;Username=postgres;Password=yourpassword
+      - OpenAI__ApiKey=${OpenAI__ApiKey}
+      - GitHub__WebhookSecret=${GitHub__WebhookSecret}
     volumes:
       - dp_keys:/root/.aspnet/DataProtection-Keys  # 保留加密金鑰，避免重啟後 Cookie 失效
     depends_on:
