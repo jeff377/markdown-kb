@@ -1,0 +1,163 @@
+@page
+@model MarkdownKB.Web.Pages.Admin.ReindexModel
+@{
+    ViewData["Title"] = "Re-index 管理";
+}
+
+<style>
+    .stat-table th { background: #f6f8fa; }
+    .stat-table td, .stat-table th { vertical-align: middle; }
+
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: .75rem; }
+
+    #toast-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+    .toast-msg {
+        padding: .65rem 1rem;
+        border-radius: 6px;
+        font-size: .875rem;
+        color: #fff;
+        animation: fadeIn .2s ease;
+    }
+    .toast-msg.success { background: #1a7f37; }
+    .toast-msg.error   { background: #cf222e; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+</style>
+
+<h2 class="h5 fw-semibold mb-4">⚙️ Re-index 管理</h2>
+
+<!-- ── Currently indexed repos ─────────────────────────────────────────── -->
+<div class="mb-5">
+    <p class="section-title">已索引的 Repo</p>
+
+    @if (Model.RepoStats.Count == 0)
+    {
+        <p class="text-muted small">尚無已索引的 Repo。</p>
+    }
+    else
+    {
+        <table class="table table-bordered table-sm stat-table">
+            <thead>
+                <tr>
+                    <th>Repo</th>
+                    <th class="text-center">檔案數</th>
+                    <th class="text-center">Chunk 數</th>
+                    <th>最後索引時間</th>
+                    <th class="text-center">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.RepoStats)
+                {
+                    var parts = s.RepoId.Split('/', 2);
+                    var owner = parts.Length == 2 ? parts[0] : s.RepoId;
+                    var repo  = parts.Length == 2 ? parts[1] : "";
+
+                    <tr>
+                        <td><code>@s.RepoId</code></td>
+                        <td class="text-center">@s.FileCount</td>
+                        <td class="text-center">@s.ChunkCount</td>
+                        <td class="text-muted small">@s.LastIndexedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-warning reindex-btn"
+                                    data-owner="@owner" data-repo="@repo">
+                                重建索引
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<!-- ── Add new repo ────────────────────────────────────────────────────── -->
+<div class="mb-4" style="max-width:520px;">
+    <p class="section-title">新增 / 指定 Repo 建立索引</p>
+
+    <div class="row g-2 mb-2">
+        <div class="col">
+            <input type="text" id="input-owner" class="form-control form-control-sm"
+                   placeholder="Owner（e.g. jeff377）" />
+        </div>
+        <div class="col">
+            <input type="text" id="input-repo" class="form-control form-control-sm"
+                   placeholder="Repo（e.g. markdown-kb-content）" />
+        </div>
+    </div>
+    <div class="mb-2">
+        <input type="password" id="input-token" class="form-control form-control-sm"
+               placeholder="GitHub Token（Private Repo 才需要）" autocomplete="new-password" />
+    </div>
+    <button id="btn-reindex-new" class="btn btn-primary btn-sm">
+        開始建立索引
+    </button>
+</div>
+
+<div id="toast-container"></div>
+
+@section Scripts {
+<script>
+(function () {
+    // ── Reindex existing repo ───────────────────────────────────────────────
+    document.querySelectorAll('.reindex-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            triggerReindex(this.dataset.owner, this.dataset.repo, '', this);
+        });
+    });
+
+    // ── Reindex new repo ────────────────────────────────────────────────────
+    document.getElementById('btn-reindex-new').addEventListener('click', function () {
+        const owner = document.getElementById('input-owner').value.trim();
+        const repo  = document.getElementById('input-repo').value.trim();
+        const token = document.getElementById('input-token').value.trim();
+
+        if (!owner || !repo) {
+            showToast('請填入 Owner 和 Repo 名稱。', 'error');
+            return;
+        }
+        triggerReindex(owner, repo, token, this);
+    });
+
+    // ── Core function ───────────────────────────────────────────────────────
+    function triggerReindex(owner, repo, token, btn) {
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '啟動中…';
+
+        fetch('/api/admin/reindex', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ owner, repo, token: token || null })
+        })
+        .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+        .then(({ ok, data }) => {
+            if (ok) {
+                showToast(data.message || `${owner}/${repo} 重建索引已啟動，請稍後確認 Log。`, 'success');
+            } else {
+                showToast(data.error || '發生未知錯誤。', 'error');
+            }
+        })
+        .catch(() => showToast('連線失敗，請稍後再試。', 'error'))
+        .finally(() => { btn.disabled = false; btn.textContent = original; });
+    }
+
+    // ── Toast notification ──────────────────────────────────────────────────
+    function showToast(msg, type) {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast-msg ${type}`;
+        el.textContent = msg;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+    }
+})();
+</script>
+}

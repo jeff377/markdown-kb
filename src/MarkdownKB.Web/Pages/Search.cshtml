@@ -1,0 +1,168 @@
+@page
+@model MarkdownKB.Web.Pages.SearchModel
+@{
+    ViewData["Title"] = "搜尋";
+}
+
+<style>
+    /* ── search bar ── */
+    .search-bar {
+        display: flex;
+        gap: .5rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+    .search-bar .form-control { flex: 1; min-width: 200px; }
+    .search-bar .form-select  { width: 200px; flex-shrink: 0; }
+
+    /* ── result card ── */
+    .result-card {
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        margin-bottom: .75rem;
+        background: #fff;
+        transition: box-shadow .15s;
+    }
+    .result-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+
+    .result-meta {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: .4rem;
+        font-size: .8rem;
+        flex-wrap: wrap;
+    }
+    .result-filepath { color: #0969da; font-family: monospace; }
+    .result-heading  { color: #57606a; }
+
+    .result-snippet {
+        font-size: .875rem;
+        color: #24292f;
+        line-height: 1.6;
+        margin-bottom: .5rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .result-snippet mark {
+        background: #fff3b0;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+
+    .result-link {
+        font-size: .8rem;
+        text-decoration: none;
+        color: #0969da;
+    }
+    .result-link:hover { text-decoration: underline; }
+
+    /* ── status / empty ── */
+    #search-status { font-size: .85rem; color: #57606a; min-height: 1.4em; margin-bottom: .75rem; }
+</style>
+
+<h2 class="h5 fw-semibold mb-3">🔍 搜尋文件</h2>
+
+<!-- Search bar -->
+<div class="search-bar">
+    <input type="text" id="search-input" class="form-control"
+           placeholder="輸入關鍵字或問題…" autofocus
+           value="@(Model.Q ?? "")" />
+
+    <select id="repo-filter" class="form-select">
+        <option value="">全部 Repo</option>
+        @foreach (var r in Model.AvailableRepos)
+        {
+            <option value="@r" selected="@(r == Model.Repo ? "selected" : null)">@r</option>
+        }
+    </select>
+</div>
+
+<div id="search-status"></div>
+<div id="search-results"></div>
+
+@section Scripts {
+<script>
+(function () {
+    const input   = document.getElementById('search-input');
+    const filter  = document.getElementById('repo-filter');
+    const results = document.getElementById('search-results');
+    const status  = document.getElementById('search-status');
+
+    let timer;
+
+    // ── trigger ──────────────────────────────────────────────────────────────
+    input.addEventListener('input',  () => { clearTimeout(timer); timer = setTimeout(doSearch, 300); });
+    filter.addEventListener('change', doSearch);
+
+    // ── search ───────────────────────────────────────────────────────────────
+    function doSearch() {
+        const q    = input.value.trim();
+        const repo = filter.value;
+
+        // Update URL for deep linking
+        const url = new URL(window.location.href);
+        q    ? url.searchParams.set('q',    q)    : url.searchParams.delete('q');
+        repo ? url.searchParams.set('repo', repo) : url.searchParams.delete('repo');
+        window.history.replaceState({}, '', url.toString());
+
+        if (!q) { status.textContent = ''; results.innerHTML = ''; return; }
+
+        status.textContent = '搜尋中…';
+        results.innerHTML  = '';
+
+        const params = new URLSearchParams({ q, limit: 10 });
+        if (repo) params.set('repo', repo);
+
+        fetch('/api/search?' + params)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(data => {
+                if (data.count === 0) {
+                    status.textContent = '沒有找到相關文件';
+                } else {
+                    status.textContent = `找到 ${data.count} 筆結果`;
+                    render(data.results, q);
+                }
+            })
+            .catch(() => { status.textContent = '搜尋失敗，請稍後再試'; });
+    }
+
+    // ── render ───────────────────────────────────────────────────────────────
+    function render(items, query) {
+        results.innerHTML = items.map(r => {
+            const meta = escHtml(r.filePath)
+                + (r.headingPath ? ` <span class="result-heading">› ${escHtml(r.headingPath)}</span>` : '');
+
+            return `<div class="result-card">
+                <div class="result-meta">
+                    <span class="result-filepath">${meta}</span>
+                </div>
+                <p class="result-snippet">${highlight(r.snippet, query)}</p>
+                <a class="result-link" href="${escHtml(r.viewerUrl)}">查看文件 →</a>
+            </div>`;
+        }).join('');
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    function highlight(text, query) {
+        const words   = query.trim().split(/\s+/).filter(w => w.length > 0);
+        const escaped = escHtml(text);
+        if (words.length === 0) return escaped;
+        const pattern = words.map(escRegex).join('|');
+        return escaped.replace(new RegExp('(' + pattern + ')', 'gi'), '<mark>$1</mark>');
+    }
+
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // ── auto-search on load if query present ─────────────────────────────────
+    if (input.value) doSearch();
+})();
+</script>
+}

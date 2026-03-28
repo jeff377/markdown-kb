@@ -1,3 +1,4 @@
+using MarkdownKB.AI.Services;
 using MarkdownKB.Core.Services;
 using MarkdownKB.Search;
 using MarkdownKB.Search.Services;
@@ -27,6 +28,12 @@ builder.Services.AddDbContext<SearchDbContext>(options =>
 builder.Services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
 builder.Services.AddScoped<MarkdownChunker>();
 builder.Services.AddScoped<IndexingService>();
+builder.Services.AddScoped<HybridSearchService>();
+
+// Phase 3 — RAG / Chat
+builder.Services.AddSingleton<ConversationService>();
+builder.Services.AddScoped<QueryRewriter>();
+builder.Services.AddScoped<RagService>();
 
 builder.Services.AddDataProtection();
 
