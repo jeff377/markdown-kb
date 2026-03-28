@@ -1,9 +1,9 @@
 # Phase 1 執行步驟：文件瀏覽網站
 
 > **所屬專案：** Markdown 知識庫平台
-> **技術棧：** ASP.NET Core (.NET 8) Razor Pages、Markdig、HtmlAgilityPack、IMemoryCache
+> **技術棧：** ASP.NET Core (.NET 10) Razor Pages、Markdig、HtmlAgilityPack、IMemoryCache
 > **預估工期：** 3 週
-> **文件版本：** 1.0
+> **文件版本：** 1.1
 > **建立日期：** 2026-03-23
 
 ---
@@ -16,28 +16,46 @@
 
 ## 專案結構
 
+Phase 1 建立兩個專案：`MarkdownKB.Core`（Class Library）與 `MarkdownKB.Web`（Web Application）。
+
 ```
-MarkdownKB/
-├── Pages/
-│   ├── Index.cshtml              # 首頁（輸入 owner/repo）
-│   ├── Index.cshtml.cs
-│   ├── Viewer.cshtml             # 文件瀏覽主頁面
-│   ├── Viewer.cshtml.cs
-│   ├── Error.cshtml              # 全域錯誤頁面
-│   └── Shared/
-│       ├── _Layout.cshtml        # 含 sidebar + content 的主版型
-│       └── _TreeNav.cshtml       # 樹狀導覽元件
-├── Services/
-│   ├── GitHubService.cs          # GitHub API 存取
-│   ├── MarkdownService.cs        # Markdown 渲染與路徑轉換
-│   └── TokenService.cs           # Token 加密存儲
-├── Models/
-│   ├── GitHubTreeNode.cs         # Repo Tree 資料模型
-│   └── RepoConfig.cs             # Repo 設定
-├── Dockerfile
-├── docker-compose.yml
-├── .dockerignore
-└── README.md
+src/
+├── MarkdownKB.Core                    ← Phase 1 新增（Class Library）
+│   ├── Models/
+│   │   ├── GitHubTreeNode.cs          # Repo Tree 資料模型
+│   │   └── RepoConfig.cs              # Repo 設定
+│   └── Services/
+│       ├── GitHubService.cs           # GitHub API 存取
+│       ├── MarkdownService.cs         # Markdown 渲染與路徑轉換
+│       └── TokenService.cs            # Token 加密存儲
+│
+└── MarkdownKB.Web                     ← Phase 1 新增（Web Application）
+    ├── Pages/
+    │   ├── Index.cshtml               # 首頁（輸入 owner/repo）
+    │   ├── Index.cshtml.cs
+    │   ├── Viewer.cshtml              # 文件瀏覽主頁面
+    │   ├── Viewer.cshtml.cs
+    │   ├── Error.cshtml               # 全域錯誤頁面
+    │   └── Shared/
+    │       ├── _Layout.cshtml         # 含 sidebar + content 的主版型
+    │       └── _TreeNav.cshtml        # 樹狀導覽元件
+    └── Program.cs
+```
+
+**專案相依關係：**
+
+```
+MarkdownKB.Web
+  └── 參考 MarkdownKB.Core
+```
+
+**方案根目錄檔案：**
+
+```
+MarkdownKB.sln
+Dockerfile
+docker-compose.yml
+.dockerignore
 ```
 
 ---
@@ -45,14 +63,18 @@ MarkdownKB/
 ## Step 1 — 建立專案骨架
 
 ```bash
-dotnet new webapp -n MarkdownKB --framework net8.0
-cd MarkdownKB
+dotnet new sln -n MarkdownKB
+dotnet new classlib -n MarkdownKB.Core --framework net10.0 -o src/MarkdownKB.Core
+dotnet new webapp   -n MarkdownKB.Web  --framework net10.0 -o src/MarkdownKB.Web
+dotnet sln add src/MarkdownKB.Core/MarkdownKB.Core.csproj
+dotnet sln add src/MarkdownKB.Web/MarkdownKB.Web.csproj
+dotnet add src/MarkdownKB.Web reference src/MarkdownKB.Core
 
-dotnet add package Markdig
-dotnet add package HtmlAgilityPack
+dotnet add src/MarkdownKB.Core package Markdig
+dotnet add src/MarkdownKB.Core package HtmlAgilityPack
 ```
 
-在 `Program.cs` 完成以下 DI 註冊：
+在 `src/MarkdownKB.Web/Program.cs` 完成以下 DI 註冊：
 
 - `AddMemoryCache`（SizeLimit = 100）
 - `AddHttpClient<GitHubService>`
@@ -65,7 +87,7 @@ dotnet add package HtmlAgilityPack
 
 ## Step 2 — 實作 GitHubService
 
-### Models/GitHubTreeNode.cs
+### MarkdownKB.Core/Models/GitHubTreeNode.cs
 
 | 屬性 | 型別 | 說明 |
 |------|------|------|
@@ -75,7 +97,7 @@ dotnet add package HtmlAgilityPack
 | Sha | string? | Git SHA |
 | Children | List\<GitHubTreeNode\> | 子節點（資料夾用） |
 
-### Services/GitHubService.cs
+### MarkdownKB.Core/Services/GitHubService.cs
 
 實作三個核心方法：
 
@@ -140,7 +162,7 @@ private List<GitHubTreeNode> FilterEmptyFolders(List<GitHubTreeNode> nodes)
 
 ## Step 3 — 實作 MarkdownService
 
-### Services/MarkdownService.cs
+### MarkdownKB.Core/Services/MarkdownService.cs
 
 實作 `string Render(string markdown, string owner, string repo, string currentPath)` 方法：
 
@@ -169,7 +191,7 @@ var pipeline = new MarkdownPipelineBuilder()
 
 ## Step 4 — 實作 TokenService
 
-### Services/TokenService.cs
+### MarkdownKB.Core/Services/TokenService.cs
 
 使用 ASP.NET Core Data Protection API 加密存儲 GitHub Token：
 
@@ -198,7 +220,7 @@ _protector = provider.CreateProtector("GitHubToken");
 
 ## Step 5 — 建立 Index 首頁
 
-### Pages/Index.cshtml.cs
+### MarkdownKB.Web/Pages/Index.cshtml.cs
 
 - `[BindProperty] string Owner`
 - `[BindProperty] string Repo`
@@ -206,7 +228,7 @@ _protector = provider.CreateProtector("GitHubToken");
 - `OnGet()`：若 Cookie 已有 Token，預先填入（遮蔽顯示）
 - `OnPost()`：驗證欄位 → 儲存 Token → Redirect 至 `/Viewer?owner={Owner}&repo={Repo}`
 
-### Pages/Index.cshtml
+### MarkdownKB.Web/Pages/Index.cshtml
 
 使用 Bootstrap 5（CDN），包含：
 - 標題、Repository 輸入欄位（owner/repo 格式）
@@ -217,7 +239,7 @@ _protector = provider.CreateProtector("GitHubToken");
 
 ## Step 6 — 建立 Viewer 頁面與 Tree 導覽
 
-### Pages/Viewer.cshtml.cs
+### MarkdownKB.Web/Pages/Viewer.cshtml.cs
 
 `OnGetAsync()` 執行流程：
 
@@ -229,7 +251,7 @@ _protector = provider.CreateProtector("GitHubToken");
 
 另可選：呼叫 GitHub Commits API 取得文件的 `LastUpdated` 時間。
 
-### Pages/Shared/_TreeNav.cshtml
+### MarkdownKB.Web/Pages/Shared/_TreeNav.cshtml
 
 遞迴渲染巢狀樹狀結構：
 
@@ -249,14 +271,14 @@ _protector = provider.CreateProtector("GitHubToken");
 
 > **說明：** 使用 HTML 原生 `<details>/<summary>` 元素，不需要 JavaScript 即可運作。`open` 屬性確保深層文件被直接連結開啟時，側邊欄自動展開至對應位置。
 
-### Pages/Shared/_Layout.cshtml
+### MarkdownKB.Web/Pages/Shared/_Layout.cshtml
 
 - 兩欄式版型：左側 Sidebar（280px）+ 右側 Content（flex-grow）
 - 頂部 Header：顯示 Repo 名稱與返回首頁連結
 - 引入 Bootstrap 5（CDN）
 - 引入 highlight.js（CDN）並在頁尾加入 `hljs.highlightAll()`
 
-### Pages/Viewer.cshtml
+### MarkdownKB.Web/Pages/Viewer.cshtml
 
 - 麵包屑導覽（依 Path 層級產生，例如：首頁 / docs / api / auth.md）
 - 錯誤訊息區塊（含對應操作提示）
@@ -291,20 +313,31 @@ _protector = provider.CreateProtector("GitHubToken");
 ### Dockerfile
 
 ```dockerfile
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+# Stage 1 – build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY src/MarkdownKB.Core/MarkdownKB.Core.csproj src/MarkdownKB.Core/
+COPY src/MarkdownKB.Web/MarkdownKB.Web.csproj   src/MarkdownKB.Web/
+RUN dotnet restore src/MarkdownKB.Web/MarkdownKB.Web.csproj
+
+COPY . .
+RUN dotnet publish src/MarkdownKB.Web/MarkdownKB.Web.csproj \
+        -c Release \
+        -o /app/publish \
+        --no-restore
+
+# Stage 2 – runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 8080
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "MarkdownKB.dll"]
+
+ENTRYPOINT ["dotnet", "MarkdownKB.Web.dll"]
 ```
+
+> **說明：** 先 COPY 各 `.csproj` 再執行 `dotnet restore`，利用 Docker layer 快取避免套件重複下載。
 
 ### docker-compose.yml
 
@@ -318,13 +351,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
     volumes:
-      - dp_keys:/root/.aspnet/DataProtection-Keys
+      - dp_keys:/root/.aspnet/DataProtection-Keys  # 保留加密金鑰，避免重啟後 Cookie 失效
 
 volumes:
   dp_keys:
 ```
 
-> **注意：** `dp_keys` Volume 用於保留 Data Protection 加密金鑰，避免容器重啟後 Cookie 解密失敗。
+> **注意：** `dp_keys` Volume 用於保留 Data Protection 加密金鑰，避免容器重啟後 Cookie 解密失敗。Phase 2 起會加入 PostgreSQL，docker-compose.yml 會同步擴充。
 
 ---
 
@@ -352,19 +385,20 @@ Step 8  Docker 打包            1 天
 - **預設 Branch 偵測**：需支援 `main` / `master` 自動偵測，不可寫死
 - **Markdown 相對路徑**：含圖片、文件交叉連結，需全面處理，是 Phase 1 最容易踩坑的地方
 - **巢狀 Tree 展開互動**：複雜度比預期高，使用 HTML 原生 `<details>` 可大幅降低實作難度
+- **HTTPS Redirect 停用**：容器只跑 HTTP，TLS 在 ngrok / 反向代理終止，`UseHttpsRedirection()` 需註解掉
 
 ---
 
 ## Phase 1 完成標準（MVP）
 
-- [ ] 可輸入 `owner/repo` 顯示文件 Tree（含巢狀資料夾展開，無 .md 的資料夾自動隱藏）
-- [ ] 點擊 `.md` 檔案可閱讀渲染後內容（含 code highlight、table、mermaid）
-- [ ] 相對路徑連結（文件間跳轉與圖片）可正確轉換
-- [ ] 支援 Private Repo Token 輸入與安全加密存儲
-- [ ] 麵包屑導覽與側邊欄當前位置高亮
-- [ ] 完整錯誤處理與快取機制
-- [ ] Docker Compose 可一鍵部署
+- [x] 可輸入 `owner/repo` 顯示文件 Tree（含巢狀資料夾展開，無 .md 的資料夾自動隱藏）
+- [x] 點擊 `.md` 檔案可閱讀渲染後內容（含 code highlight、table、mermaid）
+- [x] 相對路徑連結（文件間跳轉與圖片）可正確轉換
+- [x] 支援 Private Repo Token 輸入與安全加密存儲
+- [x] 麵包屑導覽與側邊欄當前位置高亮
+- [x] 完整錯誤處理與快取機制
+- [x] Docker Compose 可一鍵部署
 
 ---
 
-*文件版本：1.0 | 建立日期：2026-03-23 | 所屬計劃：Markdown 知識庫平台 v1.2*
+*文件版本：1.1 | 建立日期：2026-03-23 | 最後更新：2026-03-28 | 所屬計劃：Markdown 知識庫平台 v1.2*
