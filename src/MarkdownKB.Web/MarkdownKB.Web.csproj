@@ -10,6 +10,11 @@
     <ProjectReference Include="..\MarkdownKB.Core\MarkdownKB.Core.csproj" />
     <ProjectReference Include="..\MarkdownKB.Search\MarkdownKB.Search.csproj" />
     <ProjectReference Include="..\MarkdownKB.AI\MarkdownKB.AI.csproj" />
+    <ProjectReference Include="..\MarkdownKB.Channels\MarkdownKB.Channels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
 </Project>

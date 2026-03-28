@@ -5,6 +5,7 @@ WORKDIR /src
 COPY src/MarkdownKB.Core/MarkdownKB.Core.csproj src/MarkdownKB.Core/
 COPY src/MarkdownKB.Search/MarkdownKB.Search.csproj src/MarkdownKB.Search/
 COPY src/MarkdownKB.AI/MarkdownKB.AI.csproj src/MarkdownKB.AI/
+COPY src/MarkdownKB.Channels/MarkdownKB.Channels.csproj src/MarkdownKB.Channels/
 COPY src/MarkdownKB.Web/MarkdownKB.Web.csproj src/MarkdownKB.Web/
 RUN dotnet restore src/MarkdownKB.Web/MarkdownKB.Web.csproj
 

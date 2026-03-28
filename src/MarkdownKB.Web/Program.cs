@@ -1,4 +1,5 @@
 using MarkdownKB.AI.Services;
+using MarkdownKB.Channels.Line;
 using MarkdownKB.Core.Services;
 using MarkdownKB.Search;
 using MarkdownKB.Search.Services;
@@ -10,6 +11,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title       = "MarkdownKB API",
+        Version     = "v1",
+        Description = "Markdown 知識庫搜尋與問答 API"
+    });
+});
 
 builder.Services.AddMemoryCache(options =>
 {
@@ -34,6 +46,9 @@ builder.Services.AddScoped<HybridSearchService>();
 builder.Services.AddSingleton<ConversationService>();
 builder.Services.AddScoped<QueryRewriter>();
 builder.Services.AddScoped<RagService>();
+
+// Phase 4 — LINE Bot
+builder.Services.AddHttpClient<LineReplyClient>();
 
 builder.Services.AddDataProtection();
 
@@ -61,6 +76,9 @@ app.UseRouting();
 app.UseSession();
 
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MarkdownKB API v1"));
 
 app.MapRazorPages();
 app.MapControllers();
