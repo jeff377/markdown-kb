@@ -1,82 +1,81 @@
 # MarkdownKB
 
-以 GitHub Repository 為來源的 Markdown 知識庫瀏覽器，使用 ASP.NET Core (.NET 10) 建構。
+A Markdown knowledge base viewer powered by GitHub Repositories, built with ASP.NET Core (.NET 10).
 
-## 快速啟動（Docker）
+## Quick Start (Docker)
 
-### 1. 啟動服務
+### 1. Start the service
 
 ```bash
 docker compose up -d
 ```
 
-### 2. 開啟瀏覽器
+### 2. Open your browser
 
 ```
 http://localhost:8080
 ```
 
-### 3. 瀏覽 Repository
+### 3. Browse a Repository
 
-**方法一：直接輸入網址**
+**Option A: Direct URL**
 
-在網址列直接加上 `{owner}/{repo}` 即可開啟：
+Append `{owner}/{repo}` to the base URL:
 
 ```
 http://localhost:8080/jeff377/markdown-kb-content
 ```
 
-也支援直接連結到特定文件：
+You can also link directly to a specific file:
 
 ```
 http://localhost:8080/jeff377/markdown-kb-content/docs/intro.md
 ```
 
-**方法二：首頁表單**
+**Option B: Home page form**
 
-在首頁表單填入：
+Fill in the form on the home page:
 
-| 欄位 | 範例 | 說明 |
-|------|------|------|
-| Owner | `jeff377` | GitHub 用戶名稱或組織 |
-| Repository | `markdown-kb-content` | Repository 名稱 |
-| GitHub Token | *(留空)* | Public Repo 不需填寫 |
+| Field | Example | Description |
+|-------|---------|-------------|
+| Owner | `jeff377` | GitHub username or organization |
+| Repository | `markdown-kb-content` | Repository name |
+| GitHub Token | *(leave blank)* | Not required for public repos |
 
-按下「開始瀏覽」即可進入文件閱覽器。
-
----
-
-## Private Repo 的 Token 設定
-
-若要瀏覽私有 Repository，需要提供具有 `repo` 讀取權限的 GitHub Personal Access Token：
-
-1. 前往 [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
-2. 選擇 **Fine-grained tokens**（建議）或 **Tokens (classic)**
-3. 授予目標 Repository 的 **Contents: Read** 權限
-4. 複製產生的 token（格式：`github_pat_...` 或 `ghp_...`）
-5. 在首頁的 **GitHub Token** 欄位貼上 token
-
-Token 會以加密方式存入瀏覽器 Cookie（7 天有效），後續造訪無須重新輸入。
-若需更換 token，直接在首頁欄位填入新值即可覆寫。
+Click **Browse** to enter the document viewer.
 
 ---
 
-## 停止服務
+## Private Repository Access
+
+To browse a private repository, provide a GitHub Personal Access Token with `repo` read permission:
+
+1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
+2. Choose **Fine-grained tokens** (recommended) or **Tokens (classic)**
+3. Grant **Contents: Read** permission for the target repository
+4. Copy the generated token (format: `github_pat_...` or `ghp_...`)
+5. Paste it into the **GitHub Token** field on the home page
+
+The token is encrypted and stored in a browser cookie (valid for 7 days). You won't need to re-enter it on subsequent visits. To update the token, simply paste a new value into the field.
+
+---
+
+## Stop the Service
 
 ```bash
 docker compose down
 ```
 
-> **注意**：`dp_keys` volume 保存了 ASP.NET Core Data Protection 的加密金鑰。
-> 執行 `docker compose down -v` 會刪除該 volume，導致既有 Cookie 失效，使用者需重新輸入 token。
+> **Note:** The `dp_keys` volume stores ASP.NET Core Data Protection keys.
+> Running `docker compose down -v` will delete this volume, invalidating existing cookies and requiring users to re-enter their tokens.
 
 ---
 
-## 本機開發
+## Local Development
 
 ```bash
 cd src/MarkdownKB.Web
 dotnet run
 ```
 
-預設監聽 `http://localhost:5275`（或 HTTPS `https://localhost:7195`）。
+Listens on `http://localhost:5275` by default (or `https://localhost:7195` for HTTPS).
