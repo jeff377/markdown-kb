@@ -52,7 +52,8 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// HttpsRedirection disabled: container runs HTTP only; TLS is terminated at the reverse proxy (ngrok/load balancer)
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
