@@ -11,7 +11,7 @@ namespace MarkdownKB.Web.Controllers;
 [ApiController]
 [Route("api/webhook/line")]
 public class LineController(
-    RagService ragService,
+    IServiceScopeFactory scopeFactory,
     LineReplyClient lineReplyClient,
     IConfiguration configuration,
     ILogger<LineController> logger) : ControllerBase
@@ -38,15 +38,21 @@ public class LineController(
         var events = LineWebhookParser.ParseTextEvents(body);
 
         // 立即回應 200，背景處理（LINE 要求 1 秒內回應）
+        // 每個事件建立獨立 DI scope，避免 Scoped 服務（DbContext）在 request 結束後被 dispose
         foreach (var ev in events)
         {
-            _ = Task.Run(() => ProcessEventAsync(ev));
+            _ = Task.Run(async () =>
+            {
+                using var scope = scopeFactory.CreateScope();
+                var ragService = scope.ServiceProvider.GetRequiredService<RagService>();
+                await ProcessEventAsync(ev, ragService);
+            });
         }
 
         return Ok();
     }
 
-    private async Task ProcessEventAsync(LineTextEvent ev)
+    private async Task ProcessEventAsync(LineTextEvent ev, RagService ragService)
     {
         try
         {

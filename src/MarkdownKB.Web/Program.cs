@@ -21,6 +21,9 @@ builder.Services.AddSwaggerGen(c =>
         Version     = "v1",
         Description = "Markdown 知識庫搜尋與問答 API"
     });
+    // GPT Actions 需要每個 operation 都有 operationId
+    c.CustomOperationIds(e =>
+        $"{e.ActionDescriptor.RouteValues["controller"]}_{e.HttpMethod}");
 });
 
 builder.Services.AddMemoryCache(options =>
@@ -77,7 +80,42 @@ app.UseSession();
 
 app.UseAuthorization();
 
-app.UseSwagger();
+// GPT Actions 需要 OpenAPI 3.1.0；Swashbuckle 預設輸出 3.0.x，攔截回應做版本替換
+app.Use(async (ctx, next) =>
+{
+    if (ctx.Request.Path.StartsWithSegments("/swagger/v1/swagger.json"))
+    {
+        var original = ctx.Response.Body;
+        using var buffer = new MemoryStream();
+        ctx.Response.Body = buffer;
+
+        await next();
+
+        buffer.Position = 0;
+        var json = await new StreamReader(buffer).ReadToEndAsync();
+        // 將 3.0.x 替換為 GPT Actions 要求的 3.1.0
+        json = System.Text.RegularExpressions.Regex.Replace(
+            json, @"""openapi""\s*:\s*""3\.0\.\d+""", @"""openapi"":""3.1.0""");
+
+        ctx.Response.Body = original;
+        ctx.Response.ContentLength = System.Text.Encoding.UTF8.GetByteCount(json);
+        await ctx.Response.WriteAsync(json);
+        return;
+    }
+    await next();
+});
+
+app.UseSwagger(c =>
+{
+    // 動態注入 servers，讓 GPT Actions 透過 ngrok 存取時能拿到正確的 base URL
+    c.PreSerializeFilters.Add((swagger, httpReq) =>
+    {
+        var scheme = httpReq.Headers.ContainsKey("X-Forwarded-Proto")
+            ? httpReq.Headers["X-Forwarded-Proto"].ToString()
+            : httpReq.Scheme;
+        swagger.Servers = [new() { Url = $"{scheme}://{httpReq.Host}" }];
+    });
+});
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MarkdownKB API v1"));
 
 app.MapRazorPages();
