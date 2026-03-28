@@ -23,13 +23,13 @@ http://localhost:8080
 在網址列直接加上 `{owner}/{repo}` 即可開啟：
 
 ```
-http://localhost:8080/microsoft/vscode-docs
+http://localhost:8080/jeff377/markdown-kb-content
 ```
 
 也支援直接連結到特定文件：
 
 ```
-http://localhost:8080/microsoft/vscode-docs/docs/editor/settings.md
+http://localhost:8080/jeff377/markdown-kb-content/docs/intro.md
 ```
 
 **方法二：首頁表單**
@@ -38,8 +38,8 @@ http://localhost:8080/microsoft/vscode-docs/docs/editor/settings.md
 
 | 欄位 | 範例 | 說明 |
 |------|------|------|
-| Owner | `microsoft` | GitHub 用戶名稱或組織 |
-| Repository | `vscode-docs` | Repository 名稱 |
+| Owner | `jeff377` | GitHub 用戶名稱或組織 |
+| Repository | `markdown-kb-content` | Repository 名稱 |
 | GitHub Token | *(留空)* | Public Repo 不需填寫 |
 
 按下「開始瀏覽」即可進入文件閱覽器。
@@ -75,7 +75,7 @@ docker compose down
 ## 本機開發
 
 ```bash
-cd src/MarkdownKB
+cd src/MarkdownKB.Web
 dotnet run
 ```
 
