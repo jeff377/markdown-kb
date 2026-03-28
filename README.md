@@ -134,8 +134,8 @@ Each LINE user's `userId` is used as the conversation `sessionId`, providing per
 
 ## ChatGPT GPT Actions Setup
 
-1. Go to [chat.openai.com](https://chat.openai.com) → **Explore GPTs** → **Create** → **設定 (Configure)**
-2. Under **Actions**, click **建立新動作 (Create new action)**
+1. Go to [chat.openai.com](https://chat.openai.com) → **Explore GPTs** → **Create** → **Configure**
+2. Under **Actions**, click **Create new action**
 3. Import from URL:
    ```
    https://{your-domain}/swagger/v1/swagger.json
@@ -144,13 +144,13 @@ Each LINE user's `userId` is used as the conversation `sessionId`, providing per
 5. Add the following to the **Instructions** field to restrict answers to knowledge base content:
 
 ```
-你是 MarkdownKB 知識庫問答助理。
-規則：
-1. 收到使用者提問時，必須先呼叫 /api/chat 取得答案
-2. 只能根據 /api/chat 回傳的內容回覆，不得補充任何外部知識
-3. 若 /api/chat 回傳「找不到相關資料」，直接告知使用者知識庫中沒有相關資訊，不要自行回答
-4. 不得使用 ChatGPT 本身的訓練資料來回答問題
-5. 回答語言與使用者問題保持一致
+You are a MarkdownKB knowledge base assistant.
+Rules:
+1. Always call /api/chat first when the user asks a question.
+2. Only reply based on the content returned by /api/chat. Do not supplement with external knowledge.
+3. If /api/chat returns "no relevant data found", inform the user that the knowledge base has no related information. Do not answer from your own knowledge.
+4. Never use ChatGPT's training data to answer questions.
+5. Reply in the same language as the user's question.
 ```
 
 ---
