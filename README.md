@@ -53,7 +53,7 @@ MarkdownKB.Channels → (no internal references, stdlib only)
 | `DELETE` | `/api/chat/{sessionId}` | Clear a conversation session |
 | `POST` | `/api/webhook/line` | LINE Messaging API webhook |
 | `POST` | `/api/webhook/github` | GitHub push webhook (re-index on push) |
-| `POST` | `/api/admin/reindex` | Manually trigger indexing for a repo |
+| `POST` | `/api/admin/reindex` | Trigger background re-indexing for a repo (body: `{ owner, repo, token? }`, returns 202) |
 
 Interactive API docs (Swagger UI): `http://localhost:8080/swagger`
 
