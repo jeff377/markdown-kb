@@ -70,11 +70,11 @@ cp .env.example .env
 Edit `.env` and fill in the required values:
 
 ```env
-OpenAI__ApiKey=sk-proj-...
+OPENAI_API_KEY=sk-proj-...
 POSTGRES_PASSWORD=your-db-password
-GitHub__WebhookSecret=your-webhook-secret
-Line__ChannelAccessToken=your-line-channel-access-token
-Line__ChannelSecret=your-line-channel-secret
+GITHUB_WEBHOOK_SECRET=your-webhook-secret
+LINE_CHANNEL_ACCESS_TOKEN=your-line-channel-access-token
+LINE_CHANNEL_SECRET=your-line-channel-secret
 ```
 
 ### 2. Start the service
@@ -119,7 +119,7 @@ The token is encrypted and stored in a browser cookie (valid for 7 days).
 1. Create a Messaging API channel at [LINE Developers Console](https://developers.line.biz/)
 2. Set the Webhook URL to `https://{your-domain}/api/webhook/line`
 3. Enable **Use webhook**, disable **Auto-reply messages**
-4. Fill in `Line__ChannelAccessToken` and `Line__ChannelSecret` in `.env`
+4. Fill in `LINE_CHANNEL_ACCESS_TOKEN` and `LINE_CHANNEL_SECRET` in `.env`
 5. Restart: `docker compose up -d web`
 
 Each LINE user's `userId` is used as the conversation `sessionId`, providing per-user multi-turn context.
