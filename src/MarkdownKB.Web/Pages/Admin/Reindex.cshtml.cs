@@ -10,7 +10,11 @@ public class ReindexModel(SearchDbContext db) : PageModel
 
     public async Task OnGetAsync()
     {
-        RepoStats = await db.DocumentChunks
+        var chunks = await db.DocumentChunks
+            .Select(c => new { c.RepoId, c.FilePath, c.CreatedAt })
+            .ToListAsync();
+
+        RepoStats = chunks
             .GroupBy(c => c.RepoId)
             .Select(g => new RepoStat(
                 g.Key,
@@ -18,7 +22,7 @@ public class ReindexModel(SearchDbContext db) : PageModel
                 g.Select(c => c.FilePath).Distinct().Count(),
                 g.Max(c => c.CreatedAt)))
             .OrderBy(s => s.RepoId)
-            .ToListAsync();
+            .ToList();
     }
 
     public sealed record RepoStat(
