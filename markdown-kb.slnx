@@ -4,6 +4,7 @@
     <Project Path="src/MarkdownKB.Core/MarkdownKB.Core.csproj" />
     <Project Path="src/MarkdownKB.Web/MarkdownKB.Web.csproj" />
     <Project Path="src/MarkdownKB.AI/MarkdownKB.AI.csproj" />
+    <Project Path="src/MarkdownKB.Channels/MarkdownKB.Channels.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MarkdownKB.Search.Tests/MarkdownKB.Search.Tests.csproj" />
